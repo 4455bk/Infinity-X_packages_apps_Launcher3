@@ -73,6 +73,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.app.ActivityManager;
+import android.app.ActivityOptions;
 import android.app.TaskInfo;
 import android.app.WindowConfiguration;
 import android.content.ComponentName;
@@ -2858,7 +2859,8 @@ public abstract class AbsSwipeUpHandler<
         if (runningTask == null || runningTask.taskId == -1) {
             return null;
         }
-        startFreeformByLmoBroadcast(runningTask);
+        // startFreeformByLmoBroadcast(runningTask);
+        startCurrentTaskAsPopup();
         return HOME;
     }
 
@@ -2923,6 +2925,16 @@ public abstract class AbsSwipeUpHandler<
         intent.putExtra("userId", taskInfo.userId);
         intent.putExtra("taskId", taskInfo.taskId);
         mContext.sendBroadcast(intent);
+    }
+    
+    private void startCurrentTaskAsPopup() {
+        TaskInfo taskInfo = getRunningTaskInfo();
+        if (taskInfo == null || taskInfo.taskId == -1) return;
+        ComponentName component = taskInfo.topActivity != null ? taskInfo.topActivity
+                : taskInfo.baseActivity;
+        if (component == null) return;
+        // 复用 Shortcut 的小窗启动逻辑，确保尺寸一致
+        Utilities.startLmoFreeform(mContext, component, taskInfo.userId, taskInfo.taskId);
     }
 
     protected void performHapticFeedback() {

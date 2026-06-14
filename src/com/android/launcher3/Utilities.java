@@ -36,6 +36,7 @@ import android.app.ActivityOptions;
 import android.app.KeyguardManager;
 import android.app.Person;
 import android.app.WallpaperManager;
+import android.app.WindowConfiguration;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -94,6 +95,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 import androidx.core.graphics.ColorUtils;
 
+import com.android.internal.util.android.PopUpSettingsHelper;
 import com.android.launcher3.R;
 import com.android.launcher3.deviceprofile.DeviceProperties;
 import com.android.launcher3.dragndrop.FolderAdaptiveIcon;
@@ -1161,13 +1163,27 @@ public static boolean useAlternativeQuickspaceUI(Context context) {
 
     public static void startLmoFreeform(Context context, ComponentName activity,
             int userId, int taskId) {
-        final Intent intent = new Intent(FREEFORM_INTENT)
-                .setPackage(FREEFORM_PACKAGE)
-                .putExtra("packageName", activity.getPackageName())
-                .putExtra("activityName", activity.getClassName())
-                .putExtra("userId", userId)
-                .putExtra("taskId", taskId);
-        context.sendBroadcast(intent);
+        // 检查弹窗开关（使用竖屏开关，可根据需求调整）
+        if (PopUpSettingsHelper.isNotificationJumpEnabled(context, true)) {
+            // 使用弹窗模式（MINI_WINDOW_EXT = 102）
+            Intent intent = new Intent();
+            intent.setComponent(activity);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            ActivityOptions options = ActivityOptions.makeBasic();
+            options.setLaunchWindowingMode(WindowConfiguration.WINDOWING_MODE_MINI_WINDOW_EXT);
+            // 可选：设置弹窗初始大小
+            // options.setLaunchBounds(new Rect(0, 0, 600, 800));
+            context.startActivity(intent, options.toBundle());
+        } else {
+            // 原有的广播逻辑
+            final Intent intent = new Intent(FREEFORM_INTENT)
+                    .setPackage(FREEFORM_PACKAGE)
+                    .putExtra("packageName", activity.getPackageName())
+                    .putExtra("activityName", activity.getClassName())
+                    .putExtra("userId", userId)
+                    .putExtra("taskId", taskId);
+            context.sendBroadcast(intent);
+        }
     }
 
     public static void startLmoFreeform(Context context, ComponentName activity, int userId) {
